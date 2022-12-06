@@ -5,8 +5,130 @@ date: "`r Sys.Date()`"
 output: pdf_document
 ---
 
-```{r setup, include=FALSE}
+```{r setup, include=FALSE，warning=FALSE,echo=false}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## 
+# I. Abstract
+
+League of Legends is a MOBA video game developed by Riot Games in 2009 and is one of the most popular games in the world. The game's enduring appeal gives the credit to its frequent new versions as well as new champions. In order to attract new players and increase income, those new champions should be stronger than other champions and the win rate should be a little bit more than 50%. Also, for some champions that are too weak, Riot will remake or strengthen those champions. Thus, here comes the problem that how to balance the strength of all champions to ensure that there are not some champions that are too op(overpowered). It may not affect a lot in the games for normal players like us, but it may cause a huge change for the pros. This report will be divided into four parts: Introduction, Method, Result and Discussion.
+
+# II. Introduction
+
+Since this year is S12(Season 12) of the game, I will mainly focus on the data of the versions in S12, which can be found on <https://gol.gg/champion/list/season-S12/split-ALL/tournament-ALL/>. There are 11 different versions of season 12(v12.7 is missing because the pros play v12.6 in their playoffs and finals, then they play v12.8 in MSI(Mid-Season Invitational International),which means v12.7 is skipped), and their are 16 variables for all of the data including picks and bans, wins and losses, KDA and etc.
+
+\newpage
+
+# III. Method
+
+```{r, include=FALSE}
+library(readr)
+library(tidyverse)
+library(rstanarm)
+library(arm)
+library(ggplot2)
+library(stringr)
+```
+
+```{r}
+d1 <- read.csv("League of Legends pro play Champ Stats from Gol.gg - 12.1.csv")
+d2 <- read.csv("League of Legends pro play Champ Stats from Gol.gg - 12.2.csv")
+d3 <- read.csv("League of Legends pro play Champ Stats from Gol.gg - 12.3.csv")
+d4 <- read.csv("League of Legends pro play Champ Stats from Gol.gg - 12.4.csv")
+d5 <- read.csv("League of Legends pro play Champ Stats from Gol.gg - 12.5.csv")
+d6 <- read.csv("League of Legends pro play Champ Stats from Gol.gg - 12.6.csv")
+d8 <- read.csv("League of Legends pro play Champ Stats from Gol.gg - 12.8.csv")
+d9 <- read.csv("League of Legends pro play Champ Stats from Gol.gg - 12.9.csv")
+d10 <- read.csv("League of Legends pro play Champ Stats from Gol.gg - 12.10.csv")
+d11 <- read.csv("League of Legends pro play Champ Stats from Gol.gg - 12.11.csv")
+d12 <- read.csv("League of Legends pro play Champ Stats from Gol.gg - 12.12.csv")
+```
+##Preprocessing
+
+
+
+
+
+
+
+| column names | explanation                                                     |
+|:-------------------:|:--------------------------------------------------|
+|   Champion   | Name of the champion                                            |
+|    Picks     | Times the champion is picked                                    |
+|     Bans     | Times the champion is banned                                    |
+|   Presence   | Percentage of the champion is picked or banned in all games     |
+|     Wins     | Times the champion wins                                         |
+|    Losses    | Times the champion loses                                        |
+|   Winrate    | The oppurtunity the champion wins divided by total games        |
+|     KDA      | (Kills+Assists)/Deaths, symbols how well the champion is played |
+|    AVG.BT    | Average ban turn                                                |
+|      GT      | Average game time                                               |
+|     CSM      | CS(Creep Score) per minute                                      |
+|     DPM      | Damage to champions per minute                                  |
+|     GPM      | Gold per minute                                                 |
+|    CSD.15    | CS differential at 15 min                                       |
+|    GD.15     | Gold differential at 15 min                                     |
+|    XPD.15    | XP differential at 15 min                                       |
+
+
+## EDA
+
+```{r}
+
+d1 <- arrange(d1,Champion)
+d2 <- arrange(d2,Champion)
+d3 <- arrange(d3,Champion)
+d4 <- arrange(d4,Champion)
+d5 <- arrange(d5,Champion)
+d6 <- arrange(d6,Champion)
+d8 <- arrange(d8,Champion)
+d9 <- arrange(d9,Champion)
+d10 <- arrange(d10,Champion)
+d11 <- arrange(d11,Champion)
+d12 <- arrange(d12,Champion)
+d12$position <- c("TOP","MID","MID","MID","SUP","SUP","MID","MID","ADC","ADC","MID","MID","SUP","JUG","SUP","MID","SUP","ADC","TOP","MID","TOP","MID","TOP","JUG","TOP","ADC","JUG","JUG","JUG","ADC","JUG","TOP","MID","MID","TOP","TOP","TOP","TOP","JUG","TOP","JUG","SUP","TOP","TOP","JUG","SUP","JUG","TOP","TOP","ADC","ADC","ADC","ADC","SUP","JUG","MID","MID","TOP","JUG","TOP","JUG","JUG","MID","ADC","MID","JUG","SUP","JUG","MID","ADC","SUP","SUP","TOP","MID","JUG","JUG","ADC","TOP","SUP","SUP","TOP","SUP","MID","JUG","ADC","JUG","JUG","JUG","MID","TOP","MID","JUG","SUP","MID","TOP","SUP","JUG","JUG","SUP","SUP","TOP","JUG","TOP","MID","MID","ADC","JUG","ADC","SUP","SUP","JUG","TOP","TOP","TOP","TOP","ADC","JUG","SUP","SUP","MID","MID","MID","SUP","MID","MID","SUP","TOP","SUP","ADC","JUG","TOP","MID","ADC","JUG","TOP","ADC","ADC","MID","MID","MID","JUG","JUG","MID","TOP","JUG","JUG","JUG","ADC","MID","JUG","MID","TOP","TOP","SUP","JUG","MID","ADC","ADC","SUP","MID","SUP")
+d12 <- na.omit(d12)
+d12$Winrate <- str_replace(d12$Winrate,"%","")
+d12$Winrate <- as.numeric(d12$Winrate)/100
+d12$Presence <- str_replace(d12$Presence,"%","")
+d12$Presence <- as.numeric(d12$Presence)/100
+```
+
+```{r}
+ggplot(data = d12) + 
+  aes(x = CSM, y = GPM) + 
+  geom_point() + 
+  geom_smooth(formula = 'y ~ x', method = "lm") + 
+  labs(titil = "GPM vs CSM", x = "CSM", y = "GPM")
+```
+```{r}
+ ggplot(data = d12) + 
+  aes(x = CSM, y = DPM) + 
+  geom_point(aes(color = factor(position)), size = .6) + 
+  geom_smooth(aes(color = factor(position)), method = "lm", se = FALSE, formula = 'y ~ x') + 
+  labs(title = "DPM vs CSM", x = "CSM", y = "DPM")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# IV. Result
+
+
+
+
+
+
+
+# V. Discussion
