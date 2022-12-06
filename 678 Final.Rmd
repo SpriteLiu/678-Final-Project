@@ -15,7 +15,7 @@ League of Legends is a MOBA video game developed by Riot Games in 2009 and is on
 
 # II. Introduction
 
-Since this year is S12(Season 12) of the game, I will mainly focus on the data of the versions in S12, which can be found on <https://gol.gg/champion/list/season-S12/split-ALL/tournament-ALL/>. There are 11 different versions of season 12(v12.7 is missing because the pros play v12.6 in their playoffs and finals, then they play v12.8 in MSI(Mid-Season Invitational International),which means v12.7 is skipped), and their are 16 variables for all of the data including picks and bans, wins and losses, KDA and etc.
+Since this year is S12(Season 12) of the game, I will mainly focus on the data of the versions in S12. There are 11 different versions of season 12(v12.7 is missing because the pros play v12.6 in their spring playoffs and finals, then they play v12.8 in MSI(Mid-Season Invitational International),which means v12.7 is skipped), and for the original data, there are 16 variables for all of the data including picks and bans, wins and losses, KDA and etc.
 
 \newpage
 
@@ -28,6 +28,7 @@ library(rstanarm)
 library(arm)
 library(ggplot2)
 library(stringr)
+library(ggpubr)
 ```
 
 ```{r}
@@ -43,16 +44,13 @@ d10 <- read.csv("League of Legends pro play Champ Stats from Gol.gg - 12.10.csv"
 d11 <- read.csv("League of Legends pro play Champ Stats from Gol.gg - 12.11.csv")
 d12 <- read.csv("League of Legends pro play Champ Stats from Gol.gg - 12.12.csv")
 ```
-##Preprocessing
 
+## Preprocessing
 
-
-
-
-
+The data is from <https://gol.gg/champion/list/season-S12/split-ALL/tournament-ALL/>, and all of them are data in S12, but some champions have never been banned or picked, which means there are NAs in data, so I tidy the data by cleaning it. Also, in order to better analysis the data, using 161 champions is too hard to group, so I add a tag for all the champions in order to better make visualization. Let's take a brief look at the variables.
 
 | column names | explanation                                                     |
-|:-------------------:|:--------------------------------------------------|
+|:----------------------:|:----------------------------------------------|
 |   Champion   | Name of the champion                                            |
 |    Picks     | Times the champion is picked                                    |
 |     Bans     | Times the champion is banned                                    |
@@ -70,11 +68,12 @@ d12 <- read.csv("League of Legends pro play Champ Stats from Gol.gg - 12.12.csv"
 |    GD.15     | Gold differential at 15 min                                     |
 |    XPD.15    | XP differential at 15 min                                       |
 
-
 ## EDA
 
-```{r}
+There are 16 variables but obviously not all of them should be considered in fitting the model. So we are going to analysis the data, especially focus on v12.1, v12.8 and v12.12 because these three versions is the beginning, middle and end for S12. After making EDAs of v12.12, I can make a model and try to fit v12.1 and v12.8 in it.
 
+```{r}
+#Adding tags for all champions in all data
 d1 <- arrange(d1,Champion)
 d2 <- arrange(d2,Champion)
 d3 <- arrange(d3,Champion)
@@ -87,12 +86,123 @@ d10 <- arrange(d10,Champion)
 d11 <- arrange(d11,Champion)
 d12 <- arrange(d12,Champion)
 d12$position <- c("TOP","MID","MID","MID","SUP","SUP","MID","MID","ADC","ADC","MID","MID","SUP","JUG","SUP","MID","SUP","ADC","TOP","MID","TOP","MID","TOP","JUG","TOP","ADC","JUG","JUG","JUG","ADC","JUG","TOP","MID","MID","TOP","TOP","TOP","TOP","JUG","TOP","JUG","SUP","TOP","TOP","JUG","SUP","JUG","TOP","TOP","ADC","ADC","ADC","ADC","SUP","JUG","MID","MID","TOP","JUG","TOP","JUG","JUG","MID","ADC","MID","JUG","SUP","JUG","MID","ADC","SUP","SUP","TOP","MID","JUG","JUG","ADC","TOP","SUP","SUP","TOP","SUP","MID","JUG","ADC","JUG","JUG","JUG","MID","TOP","MID","JUG","SUP","MID","TOP","SUP","JUG","JUG","SUP","SUP","TOP","JUG","TOP","MID","MID","ADC","JUG","ADC","SUP","SUP","JUG","TOP","TOP","TOP","TOP","ADC","JUG","SUP","SUP","MID","MID","MID","SUP","MID","MID","SUP","TOP","SUP","ADC","JUG","TOP","MID","ADC","JUG","TOP","ADC","ADC","MID","MID","MID","JUG","JUG","MID","TOP","JUG","JUG","JUG","ADC","MID","JUG","MID","TOP","TOP","SUP","JUG","MID","ADC","ADC","SUP","MID","SUP")
+d1$position <- d12$position
+d8$position <- d12$position
+#Clear the data
+d1 <- na.omit(d1)
+d8 <- na.omit(d8)
 d12 <- na.omit(d12)
+
+d1$Winrate <- str_replace(d1$Winrate,"%","")
+d1$Winrate <- as.numeric(d1$Winrate)/100
+d1$Presence <- str_replace(d1$Presence,"%","")
+d1$Presence <- as.numeric(d1$Presence)/100
+d1$KDA <- as.numeric(d1$KDA)
+d1 <- filter(d1,Picks+Bans>10)
+
+d8$Winrate <- str_replace(d8$Winrate,"%","")
+d8$Winrate <- as.numeric(d8$Winrate)/100
+d8$Presence <- str_replace(d8$Presence,"%","")
+d8$Presence <- as.numeric(d8$Presence)/100
+d8$KDA <- as.numeric(d8$KDA)
+d8 <- filter(d8,Picks+Bans>10)
+
 d12$Winrate <- str_replace(d12$Winrate,"%","")
 d12$Winrate <- as.numeric(d12$Winrate)/100
 d12$Presence <- str_replace(d12$Presence,"%","")
 d12$Presence <- as.numeric(d12$Presence)/100
+d12$KDA <- as.numeric(d12$KDA)
+d12$Avg.BT <- as.numeric(d12$Avg.BT)
+
+d12 <- filter(d12,Picks+Bans>10)
 ```
+
+```{r}
+p1 <- ggplot(data = d12) + 
+  aes(x = KDA, y = Winrate) + 
+  geom_point(aes(color = factor(position)), size = .8) + 
+  geom_smooth(aes(color = factor(position)), method = "lm", se = FALSE, formula = 'y ~ x') + 
+  labs(title = "Winrate vs KDA", x = "KDA", y = "Winrate")
+p1
+```
+
+By looking at this figure, there is a strange point on the ADC line that has 100% win rate and a relatively high KDA. By checking the data, it's a champion called "Jhin", which is picked 9 times and banned 2 times. In order to better visualize the data, I try to remove the data of "Jhin" and make the plot again.
+
+```{r}
+d12 <- filter(d12,Champion!="Jhin")
+p2 <- ggplot(data = d12) + 
+  aes(x = KDA, y = Winrate) + 
+  geom_point(aes(color = factor(position)), size = .8) + 
+  geom_smooth(aes(color = factor(position)), method = "lm", se = FALSE, formula = 'y ~ x') + 
+  labs(title = "Winrate vs KDA", x = "KDA", y = "Winrate")
+p2
+```
+
+From the plot, we can see that except SUP, the trend of the other positions is mostly the same. That's probably a support in a game usually dies the most for the team's victory but they also has much assistance. So the KDA doesn't do much to its win rate. And for all the other position, the lines are ordered by"TOP,JUG,MID,ADC", it's because an ADC in a team usually has the highest KDA so it doesn't reflects as much as the TOP position on win rate. 
+
+```{r}
+p3 <- ggplot(data = d12) + 
+  aes(x = CSD.15, y = Winrate) + 
+  geom_point(aes(color = factor(position)), size = .8) + 
+  geom_smooth(aes(color = factor(position)), method = "lm", se = FALSE, formula = 'y ~ x') + 
+  labs(title = "Winrate vs CSD.15", x = "CSD.15", y = "Winrate")
+p3
+```
+It's an interesting graph for the position TOP and JUG, for TOP, no matter how much cs you lead your opponent, it doesn't influence much to the game's win or loss. It's true because mostly the game is over 30 minutes and at that time how much your MID and ADC lead is more important. And for JUG, when you have few CS, which means you have more ganks in the first 15 minutes, your win rate is higher.
+
+
+
+
+
+
+
+```{r}
+p4 <- ggplot(data = d12) + 
+  aes(x = DPM, y = Winrate) + 
+  geom_point(aes(color = factor(position)), size = .8) + 
+  geom_smooth(aes(color = factor(position)), method = "lm", se = FALSE, formula = 'y ~ x') + 
+  labs(title = "Winrate vs DPM", x = "DPM", y = "Winrate")
+p4
+```
+
+From the plot, we can know that the relation between Winrate and DPM is not linear, so we should consider more. So I decide to discover the relation between DPM and GPM，DPM and CSM.
+
+```{r}
+ggplot(data = d12) + 
+  aes(x = GPM, y = DPM) + 
+  geom_point() + 
+  geom_smooth(formula = 'y ~ x', method = "lm") + 
+  labs(titil = "DPM vs GPM", x = "GPM", y = "DPM")
+
+#cor.test(d12$DPM, d12$GPM, method = "pearson")
+```
+
+
+```{r}
+ggplot(data = d12) + 
+  aes(x = CSM, y = DPM) + 
+  geom_point() + 
+  geom_smooth(formula = 'y ~ x', method = "lm") + 
+  labs(titil = "DPM vs CSM", x = "CSM", y = "DPM")
+
+#cor.test(d12$DPM, d12$CSM, method = "pearson")
+```
+
+
+
+
+
+
+```{r}
+nd12 <- data.frame(d12[,c("Champion","Winrate","Presence","KDA","Avg.BT","CSM","DPM","GPM","CSD.15","GD.15","XPD.15")])
+ggpairs(nd12[,3:11])
+```
+
+
+
+
+
+
 
 ```{r}
 ggplot(data = d12) + 
@@ -101,34 +211,31 @@ ggplot(data = d12) +
   geom_smooth(formula = 'y ~ x', method = "lm") + 
   labs(titil = "GPM vs CSM", x = "CSM", y = "GPM")
 ```
-```{r}
- ggplot(data = d12) + 
-  aes(x = CSM, y = DPM) + 
-  geom_point(aes(color = factor(position)), size = .6) + 
-  geom_smooth(aes(color = factor(position)), method = "lm", se = FALSE, formula = 'y ~ x') + 
-  labs(title = "DPM vs CSM", x = "CSM", y = "DPM")
-```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 # IV. Result
 
-
-
-
-
-
-
 # V. Discussion
+
+# Appendix
+
+```{r}
+a1 <- ggplot(data = d12) + 
+  aes(x = Presence, y = Winrate) + 
+  geom_point(aes(color = factor(position)), size = .8) + 
+  geom_smooth(aes(color = factor(position)), method = "lm", se = FALSE, formula = 'y ~ x') + 
+  labs(title = "Winrate vs Presence", x = "Presence", y = "Winrate")
+a1
+```
+```{r}
+a2 <- ggplot(data = d12) + 
+  aes(x = Avg.BT, y = Winrate) + 
+  geom_point(aes(color = factor(position)), size = .8) + 
+  geom_smooth(aes(color = factor(position)), method = "lm", se = FALSE, formula = 'y ~ x') + 
+  labs(title = "Winrate vs Avg.BT", x = "Avg.BT", y = "Winrate")
+a2
+```
+```{r}
+
+```
+
+
