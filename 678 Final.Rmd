@@ -22,7 +22,7 @@ League of Legends is a MOBA video game developed by Riot Games in 2009 and is on
 # II. Introduction
 
 Since this year is S12(Season 12) of the game, I will mainly focus on the data of the versions in S12. There are 11 different versions of season 12(v12.7 is missing because the pros play v12.6 in their spring playoffs and finals, then they play v12.8 in MSI(Mid-Season Invitational International),which means v12.7 is skipped), and for the original data, there are 16 variables for all of the data including picks and bans, wins and losses, KDA and etc.
-
+First I will make some EDAs to better understand the data and have a basic knowledge of it, then I will try to fit the model using the anylysis, and finally I will output the result and discuss the change of League of Legends in S12 from MSI till end. I will mainly focus on the importance of each position and how to balance the strength of all champions in the future by comparing my result and what Riot does in the coming version v13.1.
 
 \newpage
 
@@ -78,9 +78,7 @@ The data is from <https://gol.gg/champion/list/season-S12/split-ALL/tournament-A
 |    GD.15     | Gold differential at 15 min                                     |
 |    XPD.15    | XP differential at 15 min                                       |
 
-## EDA
-
-There are 16 variables but obviously not all of them should be considered in fitting the model. So we are going to analysis the data, especially focus on v12.1, v12.8 and v12.12 because these three versions is the beginning, middle and end for S12. After making EDAs of v12.12, I can make a model and try to fit v12.1 and v12.8 in it.
+Then I tidy the data by changing those character variables to numeric ones, for example by deleting character"%" and making the variables show decimal numbers, and I deleted those champions that presence are too low. I use picks+bans>10 as a condition.
 
 ```{r echo=FALSE}
 #Adding tags for all champions in all data
@@ -96,25 +94,17 @@ d10 <- arrange(d10,Champion)
 d11 <- arrange(d11,Champion)
 d12 <- arrange(d12,Champion)
 d12$position <- c("TOP","MID","MID","MID","SUP","SUP","MID","MID","ADC","ADC","MID","MID","SUP","JUG","SUP","MID","SUP","ADC","TOP","MID","TOP","MID","TOP","JUG","TOP","ADC","JUG","JUG","JUG","ADC","JUG","TOP","MID","MID","TOP","TOP","TOP","TOP","JUG","TOP","JUG","SUP","TOP","TOP","JUG","SUP","JUG","TOP","TOP","ADC","ADC","ADC","ADC","SUP","JUG","MID","MID","TOP","JUG","TOP","JUG","JUG","MID","ADC","MID","JUG","SUP","JUG","MID","ADC","SUP","SUP","TOP","MID","JUG","JUG","ADC","TOP","SUP","SUP","TOP","SUP","MID","JUG","ADC","JUG","JUG","JUG","MID","TOP","MID","JUG","SUP","MID","TOP","SUP","JUG","JUG","SUP","SUP","TOP","JUG","TOP","MID","MID","ADC","JUG","ADC","SUP","SUP","JUG","TOP","TOP","TOP","TOP","ADC","JUG","SUP","SUP","MID","MID","MID","SUP","MID","MID","SUP","TOP","SUP","ADC","JUG","TOP","MID","ADC","JUG","TOP","ADC","ADC","MID","MID","MID","JUG","JUG","MID","TOP","JUG","JUG","JUG","ADC","MID","JUG","MID","TOP","TOP","SUP","JUG","MID","ADC","ADC","SUP","MID","SUP")
-d1$position <- d12$position
 d8$position <- d12$position
 #Clear the data
-d1 <- na.omit(d1)
 d8 <- na.omit(d8)
 d12 <- na.omit(d12)
-
-d1$Winrate <- str_replace(d1$Winrate,"%","")
-d1$Winrate <- as.numeric(d1$Winrate)/100
-d1$Presence <- str_replace(d1$Presence,"%","")
-d1$Presence <- as.numeric(d1$Presence)/100
-d1$KDA <- as.numeric(d1$KDA)
-d1 <- filter(d1,Picks+Bans>10)
 
 d8$Winrate <- str_replace(d8$Winrate,"%","")
 d8$Winrate <- as.numeric(d8$Winrate)/100
 d8$Presence <- str_replace(d8$Presence,"%","")
 d8$Presence <- as.numeric(d8$Presence)/100
 d8$KDA <- as.numeric(d8$KDA)
+d8$Avg.BT <- as.numeric(d8$Avg.BT)
 d8 <- filter(d8,Picks+Bans>10)
 
 d12$Winrate <- str_replace(d12$Winrate,"%","")
@@ -123,9 +113,12 @@ d12$Presence <- str_replace(d12$Presence,"%","")
 d12$Presence <- as.numeric(d12$Presence)/100
 d12$KDA <- as.numeric(d12$KDA)
 d12$Avg.BT <- as.numeric(d12$Avg.BT)
-
 d12 <- filter(d12,Picks+Bans>10)
 ```
+
+## EDA
+
+There are 16 variables but obviously not all of them should be considered in fitting the model. So we are going to analysis the data, especially focus on v12.8 and v12.12 because these three versions is the beginning, middle and end for S12. After making EDAs of v12.12, I can make a model and try to fit v12.8 in it.
 
 ```{r echo=FALSE,fig.height=3.6, fig.width=6}
 par(mfrow=c(1,2))
@@ -203,8 +196,10 @@ While finding the correlation matrix, the picks and bans can be substitute by pr
 nd12 <- data.frame(d12[,c("Champion","Winrate","Presence","KDA","Avg.BT","CSM","DPM","GPM","CSD.15","GD.15","XPD.15")])
 ggpairs(nd12[,3:11],progress=F)
 ```
-Using 0.7 as a limit, we can see that the conclusion that GPM,CSM,DPM are related is correct. Also,CSD.15,GD.15,XPD.15 are related. So I choose KDA, presence and CSD.15 as the variables used in the model.
-```{r echo=FALSE,warning=F}
+
+Using 0.7 as a limit, we can see that the conclusion that GPM,CSM,DPM are related is correct. Also,CSD.15,GD.15,XPD.15 are related. So I choose KDA, presence and CSD.15 as the variables used in the model.Here's the model I choose:
+
+```{r warning=F}
 model <- lmer(Winrate ~ KDA+Presence+CSD.15+Avg.BT+(1+KDA+Presence+CSD.15+Avg.BT|position),data = d12)
 model
 ```
@@ -224,6 +219,7 @@ round(ranef(model)$position, digits = 2)[1:5, ]
 ```
 
 We should know that the game's champion pick is as follows: ban 6 champions, pick 6 champions,ban 4 more and pick 4 more. So maybe there's some differences between first 6 bans, but they are mainly for 5 and 6, because the first 4 bans are for the ops in that version, but from my perspective, the first 6 ban can be considered the same importance. We can divide ban turn into two parts, first 6 as one group and 7-10 as another.
+
 ```{r echo=FALSE,fig.height=3.6, fig.width=6}
 p <- aggregate(d12$Avg.BT,by=list(type=d12$position),mean)
 ggplot(data=p,mapping=aes(x=type,y=x))+geom_bar(stat="identity",fill="steelblue")
@@ -232,18 +228,42 @@ ggplot(data=p,mapping=aes(x=type,y=x))+geom_bar(stat="identity",fill="steelblue"
 So from the data and plots, we can see that JUG is kind of important, just as mentioned that if a JUG can gank more in the first 15 minutes, the win rate will be much higher, that's probably why some op JUG is banned in very early time. 
 
 # IV. Result
+
+## Checking the Model
+
+First we can check whether the model is fit using Residual Plot and QQ Plot.
+
 ```{r echo=FALSE,fig.height=3.6, fig.width=6}
 plot(model,pch=20,main="Residual Plot")
 ```
-
 
 ```{r echo=FALSE,fig.height=3.6, fig.width=6}
 qqmath(model,main="QQ Plot")
 ```
 
+We can see that for the residual plot, the mean of the residuals is really close to 0 and for the QQ plot, most of the points are on the line, which demonstrates that the model fits and the model checking is complete.
 
+## Comparing Models
+
+By using the result above and trying to fit the same model by using the data v12.8, we have the results as below and we can compare the results.
+
+```{r echo=FALSE}
+model <- lmer(Winrate ~ KDA+Presence+CSD.15+Avg.BT+(1+KDA+Presence+CSD.15+Avg.BT|position),data = d8)
+round(ranef(model)$position, digits = 2)[1:5, ]
+```
+
+We can see that presence matters much more that it did in the newest version. I think there are two main reasons. First pro plays in version 12.8 only include MSI games which means there are only 11 teams instead of the world's teams. Also, in order to get the champion, most of the teams have no time to practice new champions and instead, they copy others bans and picks lead to much higher influence in presence. The second reason is that after the MSI, Riot weaken those champions which are chosen often and make the new version more balanced, so more champions can be chosen for the teams.
 
 # V. Discussion
+
+## Future Prospects
+
+In this project, I used multilevel model to fit the data of pro play in v12.12 and compare the result with v12.8 and get the result exactly what Riot do in the past half year. So in the future, according to the model of v12.12, Riot should decrease the impact of JUG and find a way to make TOP join in fights in the first 15 minutes. v13.1 will come out in January 2023, but the information comes out that they really decrease the impact of JUG, and they make TOP tanker, I don't know whether it can successfully make TOP more powerful in the games, but we will see.
+
+## Shortage
+
+First, some champions can be played at two positions but in order to group, I always use the position that the champion appears most frequently, which may cause the data not so accurate. Second, the variables considered can choose more, for example win rate between champions, win rate by time and etc. Then we can better analysis the data and choose the better formation.
+Last but not least, it's a game not only of the pros but also for ordinary people like me. By checking the data, I found that some champions are really strong in low rank can't even appear in the pro play. So Riot not only have to find a balance on matches, but also for all the players and it's a really tough task.
 
 # Appendix
 
