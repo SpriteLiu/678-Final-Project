@@ -17,12 +17,13 @@ knitr::opts_chunk$set(
 
 # I. Abstract
 
-League of Legends is a MOBA video game developed by Riot Games in 2009 and is one of the most popular games in the world. The game's enduring appeal gives the credit to its frequent new versions as well as new champions. In order to attract new players and increase income, those new champions should be stronger than other champions and the win rate should be a little bit more than 50%. Also, for some champions that are too weak, Riot will remake or strengthen those champions. Thus, here comes the problem that how to balance the strength of all champions to ensure that there are not some champions that are too op(overpowered). It may not affect a lot in the games for normal players like us, but it may cause a huge change for the pros. This report will be divided into four parts: Introduction, Method, Result and Discussion.
+League of Legends is a MOBA video game developed by Riot Games in 2009 and is one of the most popular games in the world. The game's enduring appeal gives the credit to its frequent new versions as well as new champions. To attract new players and increase income, those new champions should be stronger than other champions and the win rate should be a little bit more than 50%. Also, for some champions that are too weak, Riot will remake or strengthen those champions. Thus, here comes the problem that how to balance the strength of all champions to ensure that there are not some champions that are too op(overpowered). It may not affect normal players like us a lot in the games, but it may cause a huge change for the pros. This report will be divided into four parts: Introduction, Method, Result, and Discussion.
 
 # II. Introduction
 
-Since this year is S12(Season 12) of the game, I will mainly focus on the data of the versions in S12. There are 11 different versions of season 12(v12.7 is missing because the pros play v12.6 in their spring playoffs and finals, then they play v12.8 in MSI(Mid-Season Invitational International),which means v12.7 is skipped), and for the original data, there are 16 variables for all of the data including picks and bans, wins and losses, KDA and etc.
-First I will make some EDAs to better understand the data and have a basic knowledge of it, then I will try to fit the model using the anylysis, and finally I will output the result and discuss the change of League of Legends in S12 from MSI till end. I will mainly focus on the importance of each position and how to balance the strength of all champions in the future by comparing my result and what Riot does in the coming version v13.1.
+Since this year is S12(Season 12) of the game, I will mainly focus on the data of the versions in S12. There are 11 different versions of season 12(v12.7 is missing because the pros play v12.6 in their spring playoffs and finals, then they play v12.8 in MSI(Mid-Season Invitational International), which means v12.7 is skipped), and for the original data, there are 16 variables for all of the data including picks and bans, wins and losses, KDA, etc.
+First I will make some EDAs to better understand the data and have a basic knowledge of it, then I will try to fit the model using the analysis, and finally, I will output the result and discuss the change of League of Legends in S12 from MSI till the end. I will mainly focus on the importance of each position and how to balance the strength of all champions in the future by comparing my result and what Riot does in the coming version v13.1.
+
 
 \newpage
 
@@ -57,7 +58,7 @@ d12 <- read.csv("League of Legends pro play Champ Stats from Gol.gg - 12.12.csv"
 
 ## Preprocessing
 
-The data is from <https://gol.gg/champion/list/season-S12/split-ALL/tournament-ALL/>, and all of them are data in S12, but some champions have never been banned or picked, which means there are NAs in data, so I tidy the data by cleaning it. Also, in order to better analysis the data, using 161 champions is too hard to group, so I add a tag for all the champions in order to better make visualization. Let's take a brief look at the variables.
+The data is from <https://gol.gg/champion/list/season-S12/split-ALL/tournament-ALL/>, and all of them are data in S12, but some champions have never been banned or picked, which means there are NAs in data, so I tidy the data by cleaning it. Also, to better analyze, the data, using 161 champions is too hard to group, so I add a tag for all the champions to better make visualization. Let's take a brief look at the variables.
 
 | column names | explanation                                                     |
 |:-----------------------:|:---------------------------------------------|
@@ -78,7 +79,7 @@ The data is from <https://gol.gg/champion/list/season-S12/split-ALL/tournament-A
 |    GD.15     | Gold differential at 15 min                                     |
 |    XPD.15    | XP differential at 15 min                                       |
 
-Then I tidy the data by changing those character variables to numeric ones, for example by deleting character"%" and making the variables show decimal numbers, and I deleted those champions that presence are too low. I use picks+bans>10 as a condition.
+Then I tidy the data by changing those character variables to numeric ones, for example by deleting the character"%" and making the variables show decimal numbers, and I deleted those champions that presence is too low. I use picks+bans>10 as a condition.
 
 ```{r echo=FALSE}
 #Adding tags for all champions in all data
@@ -118,7 +119,7 @@ d12 <- filter(d12,Picks+Bans>10)
 
 ## EDA
 
-There are 16 variables but obviously not all of them should be considered in fitting the model. So we are going to analysis the data, especially focus on v12.8 and v12.12 because these three versions is the beginning, middle and end for S12. After making EDAs of v12.12, I can make a model and try to fit v12.8 in it.
+There are 16 variables but obviously, not all of them should be considered in fitting the model. So we are going to analyze the data, especially focusing on v12.8 and v12.12 because these three versions are the beginning, middle, and end of S12. After making the EDAs of v12.12, I can make a model and try to fit v12.8 in it.
 
 ```{r echo=FALSE,fig.height=3.6, fig.width=6}
 par(mfrow=c(1,2))
@@ -130,7 +131,7 @@ p1 <- ggplot(data = d12) +
 p1
 ```
 
-By looking at this figure, there is a strange point on the ADC line that has 100% win rate and a relatively high KDA. By checking the data, it's a champion called "Jhin", which is picked 9 times and banned 2 times. In order to better visualize the data, I try to remove the data of "Jhin" and make the plot again.
+By looking at this figure, there is a strange point on the ADC line that has a 100% win rate and a relatively high KDA. By checking the data, it's a champion called "Jhin", which is picked 9 times and banned 2 times. To better visualize the data, I try to remove the data of "Jhin" and make the plot again.
 
 ```{r echo=FALSE,fig.height=3.6, fig.width=6}
 d12 <- filter(d12,Champion!="Jhin")
@@ -142,7 +143,7 @@ p2 <- ggplot(data = d12) +
 p2
 ```
 
-From the plot, we can see that except SUP, the trend of the other positions is mostly the same. That's probably a support in a game usually dies the most for the team's victory but they also has much assistance. So the KDA doesn't do much to its win rate. And for all the other position, the lines are ordered by"TOP,JUG,MID,ADC", it's because an ADC in a team usually has the highest KDA so it doesn't reflects as much as the TOP position on win rate.
+From the plot, we can see that except for SUP, the trend of the other positions is mostly the same. That's probably SUPin a game usually dies the most for the team's victory but they also have much assistance. So the KDA doesn't do much to its win rate. And for all the other positions, the lines are ordered by"TOP, JUG, MID, ADC", it's because an ADC in a team usually has the highest KDA so it doesn't reflect as much as the TOP position on win rate.
 
 ```{r echo=FALSE,fig.height=3.6, fig.width=6}
 p3 <- ggplot(data = d12) + 
@@ -153,7 +154,7 @@ p3 <- ggplot(data = d12) +
 p3
 ```
 
-It's an interesting graph for the position TOP and JUG, for TOP, no matter how much cs you lead your opponent, it doesn't influence much to the game's win or loss. It's true because mostly the game is over 30 minutes and at that time how much your MID and ADC lead is more important. And for JUG, when you have few CS, which means you have more ganks in the first 15 minutes, your win rate is higher.
+It's an interesting graph for the position TOP and JUG, for TOP, no matter how much cs you lead your opponent, it doesn't influence much of the game's win or loss. It's true because mostly the game is over 30 minutes and at that time how much your MID and ADC lead is more important. And for JUG, when you have few CS, which means you have more ganks in the first 15 minutes, your win rate is higher.
 
 ```{r echo=FALSE,fig.height=3.6, fig.width=6}
 p4 <- ggplot(data = d12) + 
@@ -164,7 +165,7 @@ p4 <- ggplot(data = d12) +
 p4
 ```
 
-From the plot, we can know that the relation between Winrate and DPM is not linear, so we should consider more. So I decide to discover the relation between DPM and GPM，DPM and CSM.
+From the plot, we can know that the relation between Winrate and DPM is not linear, so we should consider more. So I decide to discover the relationship between DPM and GPM, DPM and CSM.
 
 ```{r echo=FALSE,fig.height=3.6, fig.width=6}
 ggplot(data = d12) + 
@@ -186,25 +187,25 @@ ggplot(data = d12) +
 #cor.test(d12$DPM, d12$CSM, method = "pearson")
 ```
 
-These two plots show DPM,CSM,GPM are related and by calculating the two Pearson correlation are 0.85 and 0.83. It is reasonable since the more CS you get, the more gold you can earn and the more damage you can deal, maybe some of the support champions even have more money but all they do in fights is giving shield so they don't have much improvement in damage, but those champions are just a few from all the champions so it doesn't matter much.
+These two plots show DPM, CSM, and GPM are related and by calculating the two Pearson correlations are 0.85 and 0.83. It is reasonable since the more CS you get, the more gold you can earn and the more damage you can deal, maybe some of the support champions even have more money but all they do in fights is give shields so they don't have much improvement in damage, but those champions are just a few from all the champions so it doesn't matter much.
 
 ## Model Fitting
 
-While finding the correlation matrix, the picks and bans can be substitute by presence, and game length is obviously not related with win rate so it is omitted. I reserve all the other variables and make the matrix.
+While finding the correlation matrix, the picks and bans can be substituted by presence, and game length is not related to the winning rate so it is omitted. I reserve all the other variables and make the matrix.
 
 ```{r echo=FALSE}
 nd12 <- data.frame(d12[,c("Champion","Winrate","Presence","KDA","Avg.BT","CSM","DPM","GPM","CSD.15","GD.15","XPD.15")])
 ggpairs(nd12[,3:11],progress=F)
 ```
 
-Using 0.7 as a limit, we can see that the conclusion that GPM,CSM,DPM are related is correct. Also,CSD.15,GD.15,XPD.15 are related. So I choose KDA, presence and CSD.15 as the variables used in the model.Here's the model I choose:
+Using 0.7 as a limit, we can see that the conclusion that GPM, CSM, and DPM are related is correct. Also, CSD.15, GD.15, and XPD.15 are related. So I choose KDA, presence, and CSD.15 as the variables used in the model. Here's the model I choose:
 
 ```{r warning=F}
 model <- lmer(Winrate ~ KDA+Presence+CSD.15+Avg.BT+(1+KDA+Presence+CSD.15+Avg.BT|position),data = d12)
 model
 ```
 
-After making the model, let's take a look at the fixed effect of it.
+After making the model, let's take a look at its fixed effect.
 
 ```{r echo=FALSE,fig.height=3.6, fig.width=6}
 plotFEsim(FEsim(model, n.sims = 100), level = 0.95, stat = 'median',intercept = TRUE)+
@@ -212,13 +213,13 @@ plotFEsim(FEsim(model, n.sims = 100), level = 0.95, stat = 'median',intercept = 
   labs(title="Random intercept and slope model")
 ```
 
-We can see that CSD.15 seems has less effect on win rate, then we give out the random effects below, we can see that it still has a little impact on the win rate.
+We can see that CSD.15 seems to have less effect on the win rate, then we give out the random effects below, and we can see that it still has little impact on the win rate.
 
 ```{r echo=FALSE}
 round(ranef(model)$position, digits = 2)[1:5, ]
 ```
 
-We should know that the game's champion pick is as follows: ban 6 champions, pick 6 champions,ban 4 more and pick 4 more. So maybe there's some differences between first 6 bans, but they are mainly for 5 and 6, because the first 4 bans are for the ops in that version, but from my perspective, the first 6 ban can be considered the same importance. We can divide ban turn into two parts, first 6 as one group and 7-10 as another.
+We should know that the game's champion pick is as follows: ban 6 champions, pick 6 champions, ban 4 more and pick 4 more. So maybe there are some differences between the first 6 bans, but they are mainly for 5 and 6 because the first 4 bans are for the ops in that version, from my perspective, the first 6 bans can be considered of the same importance. We can divide ban turns into two parts, the first 6 as one group and 7-10 as another.
 
 ```{r echo=FALSE,fig.height=3.6, fig.width=6}
 p <- aggregate(d12$Avg.BT,by=list(type=d12$position),mean)
@@ -231,7 +232,7 @@ So from the data and plots, we can see that JUG is kind of important, just as me
 
 ## Checking the Model
 
-First we can check whether the model is fit using Residual Plot and QQ Plot.
+First we can check whether the model is fit using a Residual Plot and a QQ Plot.
 
 ```{r echo=FALSE,fig.height=3.6, fig.width=6}
 plot(model,pch=20,main="Residual Plot")
@@ -241,31 +242,50 @@ plot(model,pch=20,main="Residual Plot")
 qqmath(model,main="QQ Plot")
 ```
 
-We can see that for the residual plot, the mean of the residuals is really close to 0 and for the QQ plot, most of the points are on the line, which demonstrates that the model fits and the model checking is complete.
+We can see that for the residual plot, the mean of the residuals is close to 0 and for the QQ plot, most of the points are on the line, which demonstrates that the model fits and the model checking is complete.
 
 ## Comparing Models
 
-By using the result above and trying to fit the same model by using the data v12.8, we have the results as below and we can compare the results.
+By using the result above and trying to fit the same model by using the data v12.8, we have the results below and we can compare the results.
 
 ```{r echo=FALSE}
 model <- lmer(Winrate ~ KDA+Presence+CSD.15+Avg.BT+(1+KDA+Presence+CSD.15+Avg.BT|position),data = d8)
 round(ranef(model)$position, digits = 2)[1:5, ]
 ```
 
-We can see that presence matters much more that it did in the newest version. I think there are two main reasons. First pro plays in version 12.8 only include MSI games which means there are only 11 teams instead of the world's teams. Also, in order to get the champion, most of the teams have no time to practice new champions and instead, they copy others bans and picks lead to much higher influence in presence. The second reason is that after the MSI, Riot weaken those champions which are chosen often and make the new version more balanced, so more champions can be chosen for the teams.
+We can see that presence matters much more than it did in the newest version. I think there are two main reasons. First, pro plays in version 12.8 only include MSI games which mean there are only 11 teams instead of the world's teams. Also, to get the champion, most of the teams have no time to practice new champions and instead, they copy others' bans and picks leading to much higher influence in presence. The second reason is that after the MSI, Riot weaken those champions which are chosen often and make the new version more balanced, so more champions can be chosen for the teams.
 
 # V. Discussion
 
 ## Future Prospects
 
-In this project, I used multilevel model to fit the data of pro play in v12.12 and compare the result with v12.8 and get the result exactly what Riot do in the past half year. So in the future, according to the model of v12.12, Riot should decrease the impact of JUG and find a way to make TOP join in fights in the first 15 minutes. v13.1 will come out in January 2023, but the information comes out that they really decrease the impact of JUG, and they make TOP tanker, I don't know whether it can successfully make TOP more powerful in the games, but we will see.
+In this project, I used the multilevel model to fit the data of pro play in v12.12 and compare the result with v12.8 and get the result of exactly what Riot do in the past half year. So in the future, according to the model of v12.12, Riot should decrease the impact of JUG and find a way to make TOP join in fights in the first 15 minutes. v13.1 will come out in January 2023, but the information comes out that they decrease the impact of JUG, and they make TOP tanker, I don't know whether it can successfully make TOP more powerful in the games, but we will see.
 
 ## Shortage
 
-First, some champions can be played at two positions but in order to group, I always use the position that the champion appears most frequently, which may cause the data not so accurate. Second, the variables considered can choose more, for example win rate between champions, win rate by time and etc. Then we can better analysis the data and choose the better formation.
-Last but not least, it's a game not only of the pros but also for ordinary people like me. By checking the data, I found that some champions are really strong in low rank can't even appear in the pro play. So Riot not only have to find a balance on matches, but also for all the players and it's a really tough task.
+First, some champions can be played at two positions but to the group, I always use the position that the champion appears most frequently, which may cause the data not so accurate. Second, the variables considered can choose more, for example, win rate between champions, win rate by time, etc. Then we can better analyze the data and choose the better formation.
+Last but not least, it's a game not only for the pros but also for ordinary people like me. By checking the data, I found that some champions are really strong in low rank and can't even appear in the pro play. So Riot not only has to find a balance in matches but also for all the players and it's a tough task.
+
 
 # Appendix
+
+```{r echo=FALSE,fig.height=3.6, fig.width=6}
+hist(d12$Presence,freq=FALSE,col="cornflowerblue",main="Hist & Distribution of presence",xlab="Presence") 
+lines(density(d12$Presence),col="red",lwd=2)
+```
+
+```{r echo=FALSE,fig.height=3.6, fig.width=6}
+hist(d12$KDA,freq=FALSE,col="cornflowerblue",main="Hist & Distribution of KDA",xlab="KDA")
+lines(density(d12$KDA),col="red",lwd=2)
+```
+```{r echo=FALSE,fig.height=3.6, fig.width=6}
+hist(d12$Avg.BT,freq=FALSE,col="cornflowerblue",main="Hist & Distribution of average ban turn",xlab="Avg.BT") 
+lines(density(d12$Avg.BT),col="red",lwd=2)
+```
+```{r echo=FALSE,fig.height=3.6, fig.width=6}
+hist(d12$CSD.15,freq=FALSE,col="cornflowerblue",main="Hist & Distribution of cs differential in 15 minutes",xlab="CSD.15") 
+lines(density(d12$CSD.15),col="red",lwd=2)
+```
 
 ```{r echo=FALSE,fig.height=3.6, fig.width=6}
 a1 <- ggplot(data = d12) + 
@@ -285,4 +305,11 @@ a2 <- ggplot(data = d12) +
 a2
 ```
 
-
+```{r echo=FALSE,fig.height=3.6, fig.width=6}
+a3 <- ggplot(data = d12) + 
+  aes(x = CSD.15, y = Winrate) + 
+  geom_point(aes(color = factor(position)), size = .8) + 
+  geom_smooth(aes(color = factor(position)), method = "lm", se = FALSE, formula = 'y ~ x') + 
+  labs(title = "Winrate vs CSD.15", x = "CSD.15", y = "Winrate")
+a3
+```
