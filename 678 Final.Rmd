@@ -29,6 +29,7 @@ library(arm)
 library(ggplot2)
 library(stringr)
 library(ggpubr)
+library(merTools)
 ```
 
 ```{r}
@@ -50,7 +51,7 @@ d12 <- read.csv("League of Legends pro play Champ Stats from Gol.gg - 12.12.csv"
 The data is from <https://gol.gg/champion/list/season-S12/split-ALL/tournament-ALL/>, and all of them are data in S12, but some champions have never been banned or picked, which means there are NAs in data, so I tidy the data by cleaning it. Also, in order to better analysis the data, using 161 champions is too hard to group, so I add a tag for all the champions in order to better make visualization. Let's take a brief look at the variables.
 
 | column names | explanation                                                     |
-|:----------------------:|:----------------------------------------------|
+|:-----------------------:|:---------------------------------------------|
 |   Champion   | Name of the champion                                            |
 |    Picks     | Times the champion is picked                                    |
 |     Bans     | Times the champion is banned                                    |
@@ -138,7 +139,7 @@ p2 <- ggplot(data = d12) +
 p2
 ```
 
-From the plot, we can see that except SUP, the trend of the other positions is mostly the same. That's probably a support in a game usually dies the most for the team's victory but they also has much assistance. So the KDA doesn't do much to its win rate. And for all the other position, the lines are ordered by"TOP,JUG,MID,ADC", it's because an ADC in a team usually has the highest KDA so it doesn't reflects as much as the TOP position on win rate. 
+From the plot, we can see that except SUP, the trend of the other positions is mostly the same. That's probably a support in a game usually dies the most for the team's victory but they also has much assistance. So the KDA doesn't do much to its win rate. And for all the other position, the lines are ordered by"TOP,JUG,MID,ADC", it's because an ADC in a team usually has the highest KDA so it doesn't reflects as much as the TOP position on win rate.
 
 ```{r}
 p3 <- ggplot(data = d12) + 
@@ -148,13 +149,8 @@ p3 <- ggplot(data = d12) +
   labs(title = "Winrate vs CSD.15", x = "CSD.15", y = "Winrate")
 p3
 ```
+
 It's an interesting graph for the position TOP and JUG, for TOP, no matter how much cs you lead your opponent, it doesn't influence much to the game's win or loss. It's true because mostly the game is over 30 minutes and at that time how much your MID and ADC lead is more important. And for JUG, when you have few CS, which means you have more ganks in the first 15 minutes, your win rate is higher.
-
-
-
-
-
-
 
 ```{r}
 p4 <- ggplot(data = d12) + 
@@ -177,7 +173,6 @@ ggplot(data = d12) +
 #cor.test(d12$DPM, d12$GPM, method = "pearson")
 ```
 
-
 ```{r}
 ggplot(data = d12) + 
   aes(x = CSM, y = DPM) + 
@@ -187,16 +182,31 @@ ggplot(data = d12) +
 
 #cor.test(d12$DPM, d12$CSM, method = "pearson")
 ```
+These two plots show DPM,CSM,GPM are related and by calculating the two Pearson correlation are 0.85 and 0.83. It is reasonable since the more CS you get, the more gold you can earn and the more damage you can deal, maybe some of the support champions even have more money but all they do in fights is giving shield so they don't have much improvement in damage, but those champions are just a few from all the champions so it doesn't matter much.
 
+## Model Fitiing
 
-
-
-
+While finding the correlation matrix, the picks and bans can be substitute by presence, and game length is obviously not related with win rate so it is omitted. I reserve all the other variables and make the matrix.
 
 ```{r}
 nd12 <- data.frame(d12[,c("Champion","Winrate","Presence","KDA","Avg.BT","CSM","DPM","GPM","CSD.15","GD.15","XPD.15")])
-ggpairs(nd12[,3:11])
+ggpairs(nd12[,3:11],progress=F)
 ```
+Using 0.7 as a limit, we can see that the conclusion that GPM,CSM,DPM are related is correct. Also,CSD.15,GD.15,XPD.15 are related. So I choose KDA, presence,DPM and GD.15 as the variables used in the model.
+```{r, warning=F}
+model <- lmer(Winrate ~ KDA+ Presence+DPM+GD.15+Avg.BT+(1|position),
+              data = d12)
+model
+
+```
+```{r}
+plotFEsim(FEsim(model, n.sims = 100), level = 0.9, stat = 'median', intercept = FALSE)
+```
+
+
+
+
+
 
 
 
@@ -226,6 +236,7 @@ a1 <- ggplot(data = d12) +
   labs(title = "Winrate vs Presence", x = "Presence", y = "Winrate")
 a1
 ```
+
 ```{r}
 a2 <- ggplot(data = d12) + 
   aes(x = Avg.BT, y = Winrate) + 
@@ -234,8 +245,7 @@ a2 <- ggplot(data = d12) +
   labs(title = "Winrate vs Avg.BT", x = "Avg.BT", y = "Winrate")
 a2
 ```
+
 ```{r}
 
 ```
-
-
